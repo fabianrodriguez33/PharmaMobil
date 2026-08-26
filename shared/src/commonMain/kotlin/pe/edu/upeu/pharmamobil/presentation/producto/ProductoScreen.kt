@@ -1,0 +1,111 @@
+package pe.edu.upeu.pharmamobil.presentation.producto
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
+
+@Composable
+fun ProductoScreen() {
+
+    var nombre by remember {
+        mutableStateOf("")
+    }
+
+    var precio by remember {
+        mutableStateOf("")
+    }
+
+    var stock by remember {
+        mutableStateOf("")
+    }
+
+    var nombreError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var precioError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var stockError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var mensajeExito by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    fun validar(): Boolean {
+        nombreError = ProductoValidator.validarNombre(nombre)
+        precioError = ProductoValidator.validarPrecio(precio)
+        stockError = ProductoValidator.validarStock(stock)
+
+        return nombreError == null && precioError == null && stockError == null
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+
+        Text("PharmaMobil")
+        Text("Registro de Producto")
+
+        ValidatedTextField(
+            value = nombre,
+            onValueChange = { nombre = it },
+            label = "Nombre",
+            error = nombreError,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        ValidatedTextField(
+            value = precio,
+            onValueChange = { precio = it },
+            label = "Precio",
+            error = precioError,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        ValidatedTextField(
+            value = stock,
+            onValueChange = { stock = it },
+            label = "Stock",
+            error = stockError,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Button(
+            onClick = {
+                mensajeExito = null
+                if (validar()) {
+                    mensajeExito = "Producto \"$nombre\" registrado correctamente"
+                    nombre = ""
+                    precio = ""
+                    stock = ""
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Registrar")
+        }
+
+        mensajeExito?.let {
+            Text(it)
+        }
+    }
+}
