@@ -68,7 +68,7 @@ fun ProductoScreen() {
         ValidatedTextField(
             value = nombre,
             onValueChange = { nombre = it },
-            label = "Nombre",
+            label = "Nombre:",
             error = nombreError,
             modifier = Modifier.fillMaxWidth()
         )
