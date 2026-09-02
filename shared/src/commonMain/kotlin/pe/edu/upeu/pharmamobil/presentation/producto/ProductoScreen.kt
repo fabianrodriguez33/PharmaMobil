@@ -2,10 +2,13 @@ package pe.edu.upeu.pharmamobil.presentation.producto
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import pe.edu.upeu.pharmamobil.domain.model.Producto
+import pe.edu.upeu.pharmamobil.domain.model.productosDemo
 import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
 
 @Composable
@@ -146,5 +150,13 @@ fun ProductoScreen(
         mensajeExito?.let {
             Text(it)
         }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Inventario",
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        InventarioTabs(productos = productosDemo)
     }
 }
