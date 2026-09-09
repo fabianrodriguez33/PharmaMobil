@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import pe.edu.upeu.pharmamobil.domain.model.Producto
 import kotlin.math.roundToInt
 
-
 @Composable
 fun InventarioTabs(productos: List<Producto>) {
     var tabSeleccionada by remember {
@@ -30,9 +29,9 @@ fun InventarioTabs(productos: List<Producto>) {
     }
 
     val productosFiltrados = when (tabSeleccionada) {
-        0 -> productos.filter { it.activo && it.stock > 5 }
-        1 -> productos.filter { !it.activo }
-        2 -> productos.filter { it.stock <= 5 }
+        0 -> productos.filter { it.stock > 5 }          // "Activos" = stock suficiente
+        1 -> productos.filter { it.stock <= 5 }        // "Bajo stock"
+        2 -> emptyList()                               // Eliminamos "Inactivos" (no existe activo)
         else -> emptyList()
     }
 
@@ -43,19 +42,19 @@ fun InventarioTabs(productos: List<Producto>) {
             Tab(
                 selected = tabSeleccionada == 0,
                 onClick = { tabSeleccionada = 0 },
-                text = { Text("Activos") }
+                text = { Text("Stock OK") }
             )
 
             Tab(
                 selected = tabSeleccionada == 1,
                 onClick = { tabSeleccionada = 1 },
-                text = { Text("Inactivos") }
+                text = { Text("Bajo stock") }
             )
 
             Tab(
                 selected = tabSeleccionada == 2,
                 onClick = { tabSeleccionada = 2 },
-                text = { Text("Bajo stock") }
+                text = { Text("Otros") }
             )
         }
 
@@ -95,17 +94,12 @@ private fun ProductoCard(producto: Producto) {
 
             Text(
                 text = when {
-                    !producto.activo -> "Estado: Inactivo"
                     producto.stock <= 5 -> "Estado: Bajo stock"
-                    else -> "Estado: Activo"
+                    else -> "Estado: Disponible"
                 },
                 color = when {
-                    !producto.activo ->
-                        MaterialTheme.colorScheme.error
-
                     producto.stock <= 5 ->
                         MaterialTheme.colorScheme.tertiary
-
                     else ->
                         MaterialTheme.colorScheme.primary
                 }

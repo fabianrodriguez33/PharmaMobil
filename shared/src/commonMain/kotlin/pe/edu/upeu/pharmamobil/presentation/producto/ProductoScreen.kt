@@ -1,162 +1,63 @@
 package pe.edu.upeu.pharmamobil.presentation.producto
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import pe.edu.upeu.pharmamobil.domain.model.Producto
-import pe.edu.upeu.pharmamobil.domain.model.productosDemo
-import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProductoScreen(
-    onProductoRegistrado: (Producto) -> Unit = {}
+    viewModel: ProductoViewModel = koinViewModel()
 ) {
-    // Estados observables para los campos de texto
-    var nombre by remember { mutableStateOf("") }
-    var precio by remember { mutableStateOf("") }
-    var stock by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Estados de error individuales
-    var nombreError by remember { mutableStateOf<String?>(null) }
-    var precioError by remember { mutableStateOf<String?>(null) }
-    var stockError by remember { mutableStateOf<String?>(null) }
-
-    // Estado para mensaje de éxito
-    var mensajeExito by remember { mutableStateOf<String?>(null) }
-
-    // ⭐ CONTROL PARA EVITAR ERRORES PREMATUROS
-    var intentoRegistrar by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text("PharmaMobil")
-        Text("Registro de Producto")
-
-        ValidatedTextField(
-            value = nombre,
-            onValueChange = {
-                nombre = it
-                // Limpiar error cuando el usuario empieza a escribir
-                if (intentoRegistrar && nombreError != null) {
-                    nombreError = null
-                }
-            },
-            label = "Nombre:",
-            error = if (intentoRegistrar) nombreError else null,
-            modifier = Modifier.fillMaxWidth()
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        OutlinedTextField(
+            value = uiState.formulario.nombre,
+            onValueChange = viewModel::onNombreChange,
+            label = { Text("Nombre") },
+            isError = uiState.formulario.errorNombre != null,
+            supportingText = { uiState.formulario.errorNombre?.let { Text(it) } }
         )
-
-        ValidatedTextField(
-            value = precio,
-            onValueChange = {
-                precio = it
-                if (intentoRegistrar && precioError != null) {
-                    precioError = null
-                }
-            },
-            label = "Precio",
-            error = if (intentoRegistrar) precioError else null,
-            modifier = Modifier.fillMaxWidth()
+        OutlinedTextField(
+            value = uiState.formulario.precio,
+            onValueChange = viewModel::onPrecioChange,
+            label = { Text("Precio") },
+            isError = uiState.formulario.errorPrecio != null,
+            supportingText = { uiState.formulario.errorPrecio?.let { Text(it) } }
         )
-
-        ValidatedTextField(
-            value = stock,
-            onValueChange = {
-                stock = it
-                if (intentoRegistrar && stockError != null) {
-                    stockError = null
-                }
-            },
-            label = "Stock",
-            error = if (intentoRegistrar) stockError else null,
-            modifier = Modifier.fillMaxWidth()
+        OutlinedTextField(
+            value = uiState.formulario.stock,
+            onValueChange = viewModel::onStockChange,
+            label = { Text("Stock") },
+            isError = uiState.formulario.errorStock != null,
+            supportingText = { uiState.formulario.errorStock?.let { Text(it) } }
         )
+        Button(onClick = viewModel::registrarProducto, enabled = !uiState.formulario.guardando) {
+            Text(if (uiState.formulario.guardando) "Guardando..." else "Registrar")
+        }
 
-        Button(
-            onClick = {
-                // ⭐ MARCAR QUE SE INTENTÓ REGISTRAR
-                intentoRegistrar = true
-                mensajeExito = null
+        Spacer(Modifier.height(16.dp))
 
-                // ⭐ VALIDACIÓN SECUENCIAL CON WHEN
-                val hayError = when {
-                    // 1. Validar nombre (primero)
-                    ProductoValidator.validarNombre(nombre) != null -> {
-                        nombreError = ProductoValidator.validarNombre(nombre)
-                        true
-                    }
-                    // 2. Validar precio (segundo)
-                    ProductoValidator.validarPrecio(precio) != null -> {
-                        precioError = ProductoValidator.validarPrecio(precio)
-                        true
-                    }
-                    // 3. Validar stock (tercero)
-                    ProductoValidator.validarStock(stock) != null -> {
-                        stockError = ProductoValidator.validarStock(stock)
-                        true
-                    }
-                    // 4. ÉXITO: todos pasaron
-                    else -> false
-                }
-
-                if (!hayError) {
-                    // ⭐ INSTANCIAR EL OBJETO PRODUCTO
-                    val producto = Producto(
-                        id = 0L,
-                        nombre = nombre.trim(),
-                        precio = precio.toDoubleOrNull()!!,  // ← Cambiado
-                        stock = stock.toIntOrNull()!!         // ← Cambiado
+        when (val fase = uiState.fase) {
+            is ProductoListaFase.Cargando -> CircularProgressIndicator()
+            is ProductoListaFase.SinProductos -> Text("No hay productos registrados")
+            is ProductoListaFase.Error -> Text("Error: ${fase.mensaje}")
+            is ProductoListaFase.ConProductos -> LazyColumn {
+                items(fase.productos) { p ->
+                    ListItem(
+                        headlineContent = { Text(p.nombre) },
+                        supportingContent = { Text("Stock: ${p.stock} · S/ ${p.precio}") },
+                        trailingContent = { if (p.requiereReposicion()) Text("Reponer") }
                     )
-
-                    // ⭐ NOTIFICAR A QUIEN CORRESPONDA
-                    onProductoRegistrado(producto)
-
-                    // ⭐ MOSTRAR MENSAJE DE ÉXITO
-                    mensajeExito = "Producto \"$nombre\" registrado correctamente"
-
-                    // ⭐ LIMPIEZA AUTOMÁTICA DE CAMPOS
-                    nombre = ""
-                    precio = ""
-                    stock = ""
-
-                    // ⭐ RESETEAR INTENTO PARA PRÓXIMO REGISTRO
-                    intentoRegistrar = false
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Registrar")
+            }
         }
-
-        // ⭐ MOSTRAR MENSAJE DE ÉXITO SI EXISTE
-        mensajeExito?.let {
-            Text(it)
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Inventario",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        InventarioTabs(productos = productosDemo)
     }
 }
