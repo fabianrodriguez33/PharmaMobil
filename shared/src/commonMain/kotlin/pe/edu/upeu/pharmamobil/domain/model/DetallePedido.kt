@@ -1,15 +1,13 @@
 package pe.edu.upeu.pharmamobil.domain.model
 
-data class DetallePedido (
+data class DetallePedido(
     val producto: Producto,
-    val cantidad: Int
-){
+    val cantidad: Int,
+    val precioUnitario: Double
+) {
     init {
-        require(cantidad > 0){
-            "La cantidad debe ser mayor que cero"
-        }
+        require(cantidad > 0) { "La cantidad debe ser mayor a 0" }
     }
-    fun subtotal(): Double {
-        return producto.precio * cantidad
-    }
+
+    val subtotal: Double get() = cantidad * precioUnitario
 }
